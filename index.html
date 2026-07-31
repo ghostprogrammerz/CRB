@@ -1,0 +1,1932 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>RCB Bank</title>
+    <!-- Include jsQR for QR decoding -->
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            width: 100%;
+            min-height: 100%;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-text-size-adjust: 100%;
+        }
+
+        input,
+        button,
+        select,
+        textarea {
+            font-size: 16px !important;
+            border-radius: 8px;
+        }
+
+        /* Mobile: fixed full-screen app shell */
+        .app {
+            width: 100%;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Mobile: lock to viewport */
+        @media (max-width: 767px) {
+            body { overflow: hidden; touch-action: manipulation; -webkit-touch-callout: none; }
+            .app {
+                position: fixed;
+                top: 0; left: 0;
+                width: 100vw;
+                height: 100vh;
+                overflow: hidden;
+                padding-top: env(safe-area-inset-top);
+                padding-bottom: env(safe-area-inset-bottom);
+                padding-left: env(safe-area-inset-left);
+                padding-right: env(safe-area-inset-right);
+            }
+        }
+
+        /* Login screens */
+        .login-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+        }
+
+        .login-card {
+            background: white;
+            padding: 30px 20px;
+            border-radius: 16px;
+            width: 100%;
+            max-width: 340px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        .login-icon {
+            text-align: center;
+            font-size: 48px;
+            margin-bottom: 20px;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .login-title {
+            text-align: center;
+            font-size: 22px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .login-subtitle {
+            text-align: center;
+            font-size: 13px;
+            color: #999;
+            margin-bottom: 20px;
+        }
+
+        .login-form {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .login-form input {
+            padding: 14px 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            width: 100%;
+        }
+
+        .login-btn {
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 16px;
+            min-height: 50px;
+        }
+
+        .login-btn:active {
+            transform: scale(0.97);
+        }
+
+        .login-hint {
+            text-align: center;
+            margin-top: 18px;
+            font-size: 12px;
+            color: #999;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* App screen */
+        .app-screen {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 14px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+            min-height: 60px;
+        }
+
+        .header-title {
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .user-badge {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .logout-btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: none;
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            min-height: 40px;
+        }
+
+        .content {
+            flex: 1;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            padding-bottom: 30px;
+        }
+        @media (min-width: 768px) {
+            .content { overflow-y: visible; }
+        }
+
+        .card {
+            background: white;
+            border-radius: 14px;
+            padding: 16px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .card-title {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 12px;
+            font-size: 15px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .balance-display {
+            font-size: 32px;
+            font-weight: bold;
+            color: #667eea;
+            margin: 8px 0;
+        }
+
+        .balance-label {
+            font-size: 13px;
+            color: #999;
+            margin-bottom: 4px;
+        }
+
+        .leaderboard {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .leaderboard-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .rank {
+            min-width: 32px;
+            color: #667eea;
+            font-weight: bold;
+        }
+
+        .user-name {
+            flex: 1;
+            margin-left: 12px;
+        }
+
+        .user-balance {
+            color: #764ba2;
+            font-weight: 600;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 12px;
+        }
+
+        .btn {
+            flex: 1;
+            min-width: 80px;
+            padding: 12px 14px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: white;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 48px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn:active {
+            transform: scale(0.96);
+        }
+
+        .btn-secondary {
+            background: #e9ecef;
+            color: #333;
+        }
+
+        .btn-sm {
+            padding: 8px 12px;
+            font-size: 13px;
+            min-height: 40px;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #e53935 0%, #c62828 100%) !important;
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: #667eea;
+            border: 1.5px solid #667eea;
+        }
+
+        .btn-outline:active {
+            background: #667eea20;
+        }
+
+        .btn-scan {
+            background: #4caf50;
+            color: white;
+        }
+
+        .btn-scan:active {
+            background: #388e3c;
+        }
+
+        .btn-success {
+            background: #43a047;
+            color: white;
+        }
+
+        .btn-success:active {
+            background: #2e7d32;
+        }
+
+        .transaction-form {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 8px;
+        }
+
+        .form-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .form-group input {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            min-height: 48px;
+        }
+
+        .form-group button {
+            padding: 12px 16px;
+            min-width: 70px;
+            min-height: 48px;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #333;
+            color: white;
+            padding: 14px 24px;
+            border-radius: 12px;
+            font-size: 14px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+            z-index: 1000;
+            max-width: 90%;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .toast.show {
+            opacity: 1;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .error {
+            color: #d32f2f;
+            font-size: 13px;
+            margin-top: 6px;
+        }
+
+        .tab-bar {
+            display: flex;
+            border-bottom: 2px solid #eee;
+            margin-bottom: 14px;
+            gap: 4px;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .tab {
+            flex: 0 0 auto;
+            padding: 12px 16px;
+            text-align: center;
+            font-size: 14px;
+            font-weight: 600;
+            color: #999;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            margin-bottom: -2px;
+            transition: 0.15s;
+            min-height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            white-space: nowrap;
+        }
+
+        .tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+
+        .tab-panel {
+            display: none;
+        }
+
+        .tab-panel.active {
+            display: block;
+        }
+
+        /* Admin Panel Styles */
+        .admin-section {
+            margin-bottom: 20px;
+        }
+        .admin-section .card-title {
+            margin-bottom: 8px;
+        }
+        .admin-table-wrap {
+            overflow-x: auto;
+            border-radius: 8px;
+            border: 1px solid #eee;
+        }
+        .admin-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+            min-width: 300px;
+        }
+        .admin-table th {
+            background: #f8f9fa;
+            color: #333;
+            font-weight: 600;
+            padding: 10px 12px;
+            text-align: left;
+            border-bottom: 2px solid #eee;
+            white-space: nowrap;
+        }
+        .admin-table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #f0f0f0;
+            color: #333;
+            word-break: break-word;
+        }
+        .admin-table tr:last-child td {
+            border-bottom: none;
+        }
+        .admin-table .mono {
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .admin-table .user-cell {
+            font-weight: 600;
+            color: #667eea;
+        }
+        .admin-table .amount-cell {
+            font-weight: 600;
+        }
+        .admin-table .amount-cell.credit {
+            color: #2e7d32;
+        }
+        .admin-table .amount-cell.debit {
+            color: #c62828;
+        }
+        .admin-table .log-time {
+            font-size: 11px;
+            color: #999;
+            white-space: nowrap;
+        }
+        .admin-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+        .admin-actions .btn {
+            flex: 0 1 auto;
+        }
+        .server-sync-badge {
+            display: inline-block;
+            font-size: 11px;
+            color: #43a047;
+            background: #e8f5e9;
+            padding: 2px 10px;
+            border-radius: 12px;
+            margin-left: 8px;
+            font-weight: 400;
+        }
+
+        .tx-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-height: 240px;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+
+        .tx-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 14px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            font-size: 13px;
+        }
+
+        .tx-left {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .tx-type {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .tx-time {
+            color: #999;
+            font-size: 11px;
+        }
+
+        .tx-amount {
+            font-weight: 700;
+            font-size: 15px;
+        }
+
+        .tx-amount.credit {
+            color: #2e7d32;
+        }
+
+        .tx-amount.debit {
+            color: #c62828;
+        }
+
+        .token-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            padding: 18px;
+            color: white;
+            margin-bottom: 12px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .token-card::before {
+            content: '';
+            position: absolute;
+            top: -30px;
+            right: -30px;
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .token-code {
+            font-family: monospace;
+            font-size: 20px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            margin: 6px 0;
+            word-break: break-all;
+        }
+
+        .token-meta {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+
+        .token-amount {
+            font-size: 26px;
+            font-weight: bold;
+            margin-top: 6px;
+        }
+
+        .token-op-row {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+            flex-wrap: wrap;
+        }
+
+        .token-op-row input {
+            flex: 2;
+            min-width: 80px;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            min-height: 48px;
+        }
+
+        .token-op-row button {
+            flex: 1;
+            min-width: 60px;
+            min-height: 48px;
+            padding: 8px 12px;
+        }
+
+        .redeem-result {
+            margin-top: 12px;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            display: none;
+        }
+
+        .redeem-result.success {
+            background: #e8f5e9;
+            color: #2e7d32;
+            display: block;
+        }
+
+        .redeem-result.error {
+            background: #ffebee;
+            color: #c62828;
+            display: block;
+        }
+
+        .saved-tokens-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .saved-token-chip {
+            background: #f0f0f0;
+            padding: 8px 14px;
+            border-radius: 20px;
+            font-family: monospace;
+            font-size: 13px;
+            cursor: pointer;
+            border: 1px solid #ddd;
+            transition: 0.1s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .saved-token-chip:active {
+            background: #e0e0e0;
+        }
+
+        .saved-token-chip .bal {
+            color: #764ba2;
+            font-weight: 600;
+        }
+
+        .scan-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 999;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            padding: 20px;
+        }
+
+        .scan-overlay video {
+            max-width: 90vw;
+            max-height: 60vh;
+            border-radius: 12px;
+            background: #000;
+            object-fit: cover;
+        }
+
+        .scan-overlay .close-scan {
+            margin-top: 24px;
+            padding: 14px 40px;
+            background: #e53935;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            cursor: pointer;
+            min-height: 54px;
+            min-width: 120px;
+        }
+
+        .scan-overlay .scan-status {
+            color: white;
+            margin-top: 16px;
+            font-size: 16px;
+            text-align: center;
+        }
+
+        /* ── Small phones ──────────────────────────────────── */
+        @media (max-width: 480px) {
+            .login-card { padding: 24px 16px; }
+            .header-title { font-size: 18px; }
+            .user-badge { font-size: 12px; padding: 4px 10px; }
+            .logout-btn { font-size: 12px; padding: 6px 12px; }
+            .balance-display { font-size: 28px; }
+            .tab { font-size: 12px; padding: 10px 12px; }
+            .btn { font-size: 13px; padding: 10px; min-height: 44px; }
+            .btn-sm { font-size: 12px; min-height: 38px; padding: 6px 10px; }
+            .form-group input { padding: 10px; min-height: 44px; }
+            .token-code { font-size: 17px; }
+            .token-amount { font-size: 22px; }
+            .saved-token-chip { font-size: 12px; padding: 6px 12px; }
+            .admin-table { font-size: 12px; min-width: 250px; }
+            .admin-table th, .admin-table td { padding: 8px 10px; }
+        }
+
+        /* ── Tablet / Desktop ──────────────────────────────── */
+        @media (min-width: 768px) {
+            body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+
+            .login-screen {
+                min-height: 100vh;
+                padding: 40px 20px;
+            }
+            .login-card {
+                max-width: 420px;
+                padding: 48px 40px;
+            }
+
+            .app-screen {
+                min-height: 100vh;
+                max-width: 960px;
+                margin: 0 auto;
+                width: 100%;
+            }
+
+            .header {
+                border-radius: 0 0 0 0;
+                padding: 18px 32px;
+            }
+
+            .content {
+                padding: 28px 32px 48px;
+                max-width: 100%;
+                overflow-y: visible;
+            }
+
+            /* Two-column layout for main cards on desktop */
+            .desktop-grid {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 20px;
+                align-items: start;
+            }
+
+            .desktop-full {
+                grid-column: 1 / -1;
+            }
+
+            .balance-display { font-size: 40px; }
+            .card { padding: 24px; }
+            .btn { font-size: 15px; min-height: 50px; }
+            .login-btn { min-height: 54px; font-size: 17px; }
+            .tab { font-size: 15px; padding: 14px 20px; }
+            .tx-list { max-height: 360px; }
+            .admin-table { font-size: 14px; }
+        }
+
+        /* ── Wide desktop ──────────────────────────────────── */
+        @media (min-width: 1200px) {
+            .app-screen { max-width: 1100px; }
+        }
+
+        /* Safe area for notched phones */
+        @supports (padding: max(0px)) {
+            @media (max-width: 767px) {
+                .app {
+                    padding-left: max(env(safe-area-inset-left), 0px);
+                    padding-right: max(env(safe-area-inset-right), 0px);
+                    padding-top: max(env(safe-area-inset-top), 0px);
+                    padding-bottom: max(env(safe-area-inset-bottom), 0px);
+                }
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <!-- LOGIN SCREEN -->
+        <div id="loginScreen" class="login-screen">
+            <div class="login-card">
+                <div class="login-icon">RCB</div>
+                <div class="login-title">RCB Bank</div>
+                <div class="login-subtitle">Secure Login</div>
+
+                <div class="login-form">
+                    <input type="text" id="loginUsername" placeholder="Username" autocomplete="username">
+                    <input type="password" id="loginPassword" placeholder="Password" autocomplete="current-password">
+                    <button class="login-btn" id="loginBtnMain" onclick="login()">Sign In</button>
+                    <div id="loginError" class="error"></div>
+                </div>
+
+                <div class="login-hint">
+                    Enter your credentials to access your account
+                </div>
+                <div style="text-align:center;margin-top:16px;">
+                    <span style="font-size:13px;color:#999;">No account? </span>
+                    <button onclick="showSignup()" style="background:none;border:none;color:#667eea;font-size:13px;font-weight:600;cursor:pointer;padding:4px 8px;">Sign Up</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- SIGN-UP SCREEN -->
+        <div id="signupScreen" class="login-screen hidden">
+            <div class="login-card">
+                <div class="login-icon">RCB</div>
+                <div class="login-title">Create Account</div>
+                <div class="login-subtitle">RCB Bank</div>
+                <div class="login-form">
+                    <input type="text" id="signupUsername" placeholder="Username">
+                    <input type="password" id="signupPassword" placeholder="Password">
+                    <button class="login-btn" id="signupBtn" onclick="signup()">Create Account</button>
+                    <div id="signupError" class="error"></div>
+                </div>
+                <div style="text-align:center;margin-top:16px;">
+                    <button onclick="showLogin()" style="background:none;border:none;color:#667eea;font-size:13px;font-weight:600;cursor:pointer;padding:4px 8px;">Back to Login</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- APP SCREEN -->
+        <div id="appScreen" class="app-screen hidden">
+            <div class="header">
+                <div class="header-title">RCB Bank</div>
+                <div class="header-right">
+                    <div class="user-badge" id="userBadge">User</div>
+                    <button class="logout-btn" onclick="logout()">Sign Out</button>
+                </div>
+            </div>
+
+            <div class="content" id="content">
+                <div class="desktop-grid">
+                <!-- Balance Card -->
+                <div class="card desktop-full">
+                    <div class="balance-label">Current Balance</div>
+                    <div class="balance-display" id="balanceDisplay">$0</div>
+                </div>
+
+                <!-- Main Tabs -->
+                <div class="card" style="min-width:0;">
+                    <div class="tab-bar" id="mainTabBar">
+                        <div class="tab active" onclick="switchTab('tab-txn')">Transfer</div>
+                        <div class="tab" onclick="switchTab('tab-history')">History</div>
+                        <div class="tab" onclick="switchTab('tab-tokens')">Token</div>
+                        <div class="tab admin-tab hidden" onclick="switchTab('tab-admin')">Admin</div>
+                    </div>
+
+                    <!-- Transfer Panel -->
+                    <div class="tab-panel active" id="tab-txn">
+                        <div class="transaction-form">
+                            <div class="form-group" style="flex-direction:column;gap:10px;">
+                                <input type="text" id="receiverInput" placeholder="Receiver's name">
+                                <div style="display:flex;gap:10px;">
+                                    <input type="number" id="amountInput" placeholder="Amount" min="1" style="flex:1;">
+                                    <button class="btn" onclick="transferMoney()" style="min-width:90px;">Send</button>
+                                </div>
+                            </div>
+                            <div class="redeem-result" id="transferResult"></div>
+                        </div>
+                    </div>
+
+                    <!-- History Panel -->
+                    <div class="tab-panel" id="tab-history">
+                        <div class="tx-list" id="txList">
+                            <div style="color:#999;font-size:13px;text-align:center;padding:30px 0;">No transactions yet</div>
+                        </div>
+                    </div>
+
+                    <!-- Token Panel -->
+                    <div class="tab-panel" id="tab-tokens">
+                        <div class="card-title" style="margin-bottom:8px;">Token Vault</div>
+
+                        <!-- Load token section -->
+                        <div style="display:flex;flex-direction:column;gap:10px;">
+                            <div class="form-group">
+                                <input type="text" id="tokenCodeInput" placeholder="Enter token code" style="font-family:monospace;flex:1;">
+                                <button class="btn btn-sm" onclick="loadToken()">Load</button>
+                                <button class="btn btn-sm btn-scan" onclick="startScanner()">Scan</button>
+                            </div>
+                            <div id="tokenLoaded" class="hidden">
+                                <div class="token-card" style="margin:6px 0;">
+                                    <div class="token-meta">TOKEN BALANCE</div>
+                                    <div class="token-code" id="loadedCode">--</div>
+                                    <div class="token-amount" id="loadedAmt">$0</div>
+                                </div>
+                                <div class="token-op-row">
+                                    <input type="number" id="tokenOpAmt" placeholder="Amount" min="1">
+                                    <button class="btn btn-sm" onclick="addToToken()">Add</button>
+                                    <button class="btn btn-sm btn-danger" onclick="debitFromToken()">Debit</button>
+                                </div>
+                                <button class="btn btn-sm btn-outline" onclick="saveTokenToMyList()" style="margin-top:8px;">Save to My List</button>
+                            </div>
+                            <div class="redeem-result" id="tokenResult"></div>
+                        </div>
+
+                        <!-- My Saved Tokens (personal list) -->
+                        <div style="margin-top:20px;border-top:1px solid #eee;padding-top:16px;">
+                            <div class="card-title" style="margin-bottom:4px;">My Saved Tokens</div>
+                            <div id="savedTokensContainer" class="saved-tokens-list"></div>
+                            <div style="font-size:12px;color:#999;margin-top:6px;">Tap a saved token to load it</div>
+                        </div>
+                    </div>
+
+                    <!-- Admin Panel -->
+                    <div class="tab-panel" id="tab-admin">
+                        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;align-items:center;">
+                            <button class="btn btn-sm btn-secondary" onclick="refreshAdminPanel()">Refresh Data</button>
+                            <button class="btn btn-sm btn-danger" onclick="clearLogs()">Clear Logs</button>
+                            <span class="server-sync-badge">🔄 Server-synced</span>
+                        </div>
+
+                        <!-- Users -->
+                        <div class="admin-section">
+                            <div class="card-title">Users & Balances</div>
+                            <div class="admin-table-wrap">
+                                <table class="admin-table" id="adminUserTable">
+                                    <thead>
+                                        <tr><th>User</th><th>Balance</th></tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Tokens -->
+                        <div class="admin-section">
+                            <div class="card-title">Tokens</div>
+                            <div class="admin-table-wrap">
+                                <table class="admin-table" id="adminTokenTable">
+                                    <thead>
+                                        <tr><th>Token Code</th><th>Balance</th></tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                            <div style="display:flex;gap:10px;margin-top:10px;flex-wrap:wrap;">
+                                <input type="number" id="adminIssueAmt" placeholder="Amount" style="flex:1;padding:12px;border:1px solid #ddd;border-radius:8px;min-height:48px;">
+                                <button class="btn btn-success" onclick="adminIssueToken()">Issue New Token</button>
+                            </div>
+                            <div id="adminIssueResult" class="redeem-result"></div>
+                        </div>
+
+                        <!-- Logs -->
+                        <div class="admin-section">
+                            <div class="card-title">Action Log <span style="font-size:11px;font-weight:400;color:#999;text-transform:none;">(stored on server)</span></div>
+                            <div class="admin-table-wrap">
+                                <table class="admin-table" id="adminLogTable">
+                                    <thead>
+                                        <tr><th>Time</th><th>User</th><th>Action</th><th>Amount</th><th>Details</th></tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right column: Leaderboard + Actions -->
+                <div style="display:flex;flex-direction:column;gap:14px;min-width:0;">
+                <!-- Leaderboard Card -->
+                <div class="card">
+                    <div class="card-title">Top Accounts</div>
+                    <div class="leaderboard" id="leaderboard"></div>
+                </div>
+
+                <!-- Actions Card -->
+                <div class="card">
+                    <div class="card-title">Actions</div>
+                    <div class="button-group">
+                        <button class="btn btn-secondary" onclick="refreshData()">Refresh</button>
+                    </div>
+                </div>
+                </div><!-- end right col -->
+                </div><!-- end desktop-grid -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Scanner Overlay -->
+    <div id="scannerOverlay" class="scan-overlay" style="display:none;">
+        <video id="scannerVideo" autoplay playsinline></video>
+        <div class="scan-status" id="scanStatus">Point camera at QR code</div>
+        <button class="close-scan" onclick="stopScanner()">Cancel</button>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        // ── Mobile fixes ────────────────────────────────────────────────────
+        document.addEventListener('touchmove', (e) => {
+            if (e.target.matches('input, textarea, select')) e.stopPropagation();
+        }, { passive: true });
+
+        let lastTouchEnd = 0;
+        document.addEventListener('touchend', (e) => {
+            const now = Date.now();
+            if (now - lastTouchEnd <= 300 && e.target.matches('button')) {
+                e.preventDefault();
+            }
+            lastTouchEnd = now;
+        }, { passive: false });
+
+        // ── Constants ──────────────────────────────────────────────────────
+        const DEFAULT_TOKENS = {
+            '1749375937': { qr: 0 },
+            '2443761987': { qr: 50 },
+            '6893540234': { qr: 0 },
+            '6352890465': { qr: 0 }
+        };
+
+        // ── Application state ─────────────────────────────────────────────
+        const state = {
+            loggedInUser: null,
+            userBalances: {},
+            userPasswords: {},
+            transactions: [],
+            tokens: {},
+            activeToken: null,
+            actionLog: [],
+            apiKey: 'f1ff456c27c0b9149f70f55e4a71e4573d44058f',
+            serverUrl: 'https://ikelene.dev/storage/'
+        };
+
+        const log = {
+            info: (...a) => console.log('%c[RCB]', 'color:#667eea;font-weight:bold', ...a),
+            ok: (...a) => console.log('%c[RCB]', 'color:#4caf50;font-weight:bold', ...a),
+            warn: (...a) => console.warn('%c[RCB]', 'color:#ff9800;font-weight:bold', ...a),
+            error: (...a) => console.error('%c[RCB]', 'color:#f44336;font-weight:bold', ...a),
+            server: (...a) => console.log('%c[SERVER]', 'color:#9c27b0;font-weight:bold', ...a),
+            group: (label) => (console.group || console.log).call(console, '%c' + label,
+            'color:#667eea;font-weight:bold'),
+            groupEnd: () => (console.groupEnd || (() => {})).call(console),
+        };
+
+        // ── STORAGE LAYER ──────────────────────────────────────────────────
+        const LS_PREFIX = 'rcb_';
+
+        function lsGet(key) {
+            return localStorage.getItem(LS_PREFIX + key) ?? '';
+        }
+
+        function lsSet(key, value) {
+            localStorage.setItem(LS_PREFIX + key, value);
+        }
+
+        async function ikeleneGet(key) {
+            const url = state.serverUrl + 'get.php';
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ apiKey: state.apiKey, key })
+                });
+                if (response.status === 401) throw new Error('Invalid API key (401)');
+                if (!response.ok) throw new Error(`Server error ${response.status}`);
+                const result = await response.json();
+                if (!result.success) return lsGet(key);
+                const val = (result.data && result.data.value != null) ? result.data.value : (result.value ?? '');
+                if (val) lsSet(key, val);
+                return val;
+            } catch (err) {
+                log.warn(`GET "${key}" server failed (${err.message}), using localStorage`);
+                return lsGet(key);
+            }
+        }
+
+        async function ikeleneSet(key, value) {
+            const payload = typeof value === 'string' ? value : JSON.stringify(value);
+            lsSet(key, payload);
+            const url = state.serverUrl + 'store.php';
+            try {
+                const body = JSON.stringify({ apiKey: state.apiKey, key, value: payload });
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body
+                });
+                if (response.status === 401) { log.warn(`SET "${key}" — bad API key, saved locally`); return; }
+                if (!response.ok) { log.warn(`SET "${key}" — server ${response.status}, saved locally`); return; }
+                const result = await response.json();
+                if (!result.success) log.warn(`SET "${key}" — server success:false, saved locally`);
+                else log.ok(`SET "${key}" — saved to server + localStorage`);
+            } catch (err) {
+                log.warn(`SET "${key}" server failed (${err.message}), saved locally`);
+            }
+        }
+
+        // ── Credentials ────────────────────────────────────────────────────
+        async function fetchCredentials() {
+            log.group('fetchCredentials');
+            let passwords = null;
+            let balances = null;
+
+            try {
+                const raw = await ikeleneGet('credentials');
+                if (raw && raw.trim()) {
+                    passwords = JSON.parse(raw);
+                    delete passwords[''];
+                    log.ok('Passwords loaded for:', Object.keys(passwords).join(', '));
+                }
+            } catch (err) {
+                log.error('credentials fetch failed:', err.message);
+            }
+
+            try {
+                const raw = await ikeleneGet('data');
+                if (raw && raw.trim()) {
+                    balances = JSON.parse(raw);
+                    delete balances[''];
+                    log.ok('Balances loaded for:', Object.keys(balances).join(', '));
+                }
+            } catch (err) {
+                log.error('data fetch failed:', err.message);
+            }
+
+            if (!passwords || !balances) {
+                log.error('Server unavailable and no cached data — cannot load credentials');
+                log.groupEnd();
+                return null;
+            }
+
+            const credentials = {};
+            for (const user of Object.keys(passwords)) {
+                const pw = typeof passwords[user] === 'object' ? passwords[user].password : passwords[user];
+                credentials[user] = {
+                    password: pw,
+                    balance: Number(balances[user] ?? 0)
+                };
+            }
+            log.ok(`Merged credentials for: ${Object.keys(credentials).join(', ')}`);
+            log.groupEnd();
+            return credentials;
+        }
+
+        async function saveBalances() {
+            log.group('saveBalances');
+            try {
+                const passwords = {};
+                for (const user of Object.keys(state.userPasswords)) {
+                    passwords[user] = state.userPasswords[user];
+                }
+                await ikeleneSet('credentials', JSON.stringify(passwords));
+
+                const dataCache = {};
+                for (const [user, bal] of Object.entries(state.userBalances)) {
+                    dataCache[user] = bal;
+                }
+                await ikeleneSet('data', JSON.stringify(dataCache));
+                log.ok('Both keys saved');
+            } catch (err) {
+                log.error('saveBalances failed:', err.message);
+            }
+            log.groupEnd();
+        }
+
+        // ── Action Log ──────────────────────────────────────────────────
+        async function loadActionLog() {
+            log.group('loadActionLog');
+            try {
+                const raw = await ikeleneGet('actionLog');
+                if (raw && raw.trim()) {
+                    state.actionLog = JSON.parse(raw);
+                    log.ok(`Loaded ${state.actionLog.length} log entries`);
+                } else {
+                    state.actionLog = [];
+                    log.info('No action log found, initializing empty');
+                }
+            } catch (err) {
+                log.error('loadActionLog failed:', err.message);
+                state.actionLog = [];
+            }
+            log.groupEnd();
+        }
+
+        async function saveActionLog() {
+            try {
+                await ikeleneSet('actionLog', JSON.stringify(state.actionLog));
+                log.ok('actionLog saved');
+            } catch (err) {
+                log.error('saveActionLog failed:', err.message);
+            }
+        }
+
+        function logAction(user, action, amount, details) {
+            state.actionLog.unshift({ timestamp: Date.now(), user, action, amount, details });
+            if (state.actionLog.length > 500) state.actionLog.length = 500;
+            saveActionLog();
+        }
+
+        // ── Tokens ─────────────────────────────────────────────────────────
+        async function loadTokens() {
+            log.group('loadTokens');
+            try {
+                const raw = await ikeleneGet('tokens');
+                log.info('tokens raw:', JSON.stringify(raw));
+                if (raw && raw.trim()) {
+                    const parsed = JSON.parse(raw);
+                    delete parsed[''];
+                    state.tokens = {};
+                    for (const [code, val] of Object.entries(parsed)) {
+                        state.tokens[code] = (typeof val === 'object' && val !== null) ? val : { qr: Number(val) };
+                    }
+                    log.ok(`Loaded ${Object.keys(state.tokens).length} token(s)`);
+                } else {
+                    log.info('No tokens found, initialising with 4 Scratch tokens');
+                    state.tokens = JSON.parse(JSON.stringify(DEFAULT_TOKENS));
+                    await saveTokens();
+                }
+
+                let changed = false;
+                for (const [code, def] of Object.entries(DEFAULT_TOKENS)) {
+                    if (!state.tokens[code]) {
+                        state.tokens[code] = { qr: def.qr };
+                        changed = true;
+                    }
+                }
+                if (changed) {
+                    log.info('Added missing default tokens');
+                    await saveTokens();
+                }
+
+                log.ok(`Final tokens: ${Object.keys(state.tokens).length} active`);
+            } catch (err) {
+                log.error('loadTokens failed:', err.message);
+                state.tokens = JSON.parse(JSON.stringify(DEFAULT_TOKENS));
+                await saveTokens();
+            }
+            log.groupEnd();
+        }
+
+        async function saveTokens() {
+            try {
+                await ikeleneSet('tokens', JSON.stringify(state.tokens));
+                log.ok('tokens saved');
+            } catch (err) {
+                log.error('saveTokens failed:', err.message);
+            }
+        }
+
+        // ── Personal saved tokens ────────────────────────────────────────
+        function getSavedTokens() {
+            const key = 'savedTokens_' + state.loggedInUser;
+            try {
+                const raw = localStorage.getItem(key);
+                return raw ? JSON.parse(raw) : [];
+            } catch { return []; }
+        }
+
+        function saveSavedTokens(list) {
+            const key = 'savedTokens_' + state.loggedInUser;
+            localStorage.setItem(key, JSON.stringify(list));
+        }
+
+        function addToSavedTokens(code) {
+            const list = getSavedTokens();
+            if (!list.includes(code)) {
+                list.push(code);
+                saveSavedTokens(list);
+            }
+            renderSavedTokens();
+        }
+
+        function renderSavedTokens() {
+            const container = document.getElementById('savedTokensContainer');
+            const list = getSavedTokens();
+            if (!list.length) {
+                container.innerHTML = '<span style="color:#999;font-size:13px;">No saved tokens</span>';
+                return;
+            }
+            container.innerHTML = list.map(code => {
+                const bal = state.tokens[code] ? Number(state.tokens[code].qr) : 0;
+                return `<span class="saved-token-chip" onclick="quickLoadSaved('${code}')">
+                            ${code} <span class="bal">$${bal.toLocaleString()}</span>
+                        </span>`;
+            }).join('');
+        }
+
+        function quickLoadSaved(code) {
+            document.getElementById('tokenCodeInput').value = code;
+            loadToken();
+        }
+
+        function saveTokenToMyList() {
+            if (!state.activeToken) return;
+            addToSavedTokens(state.activeToken);
+            showToast('Token saved to your list');
+        }
+
+        // ── Load token ────────────────────────────────────────────────────
+        async function loadToken() {
+            const code = document.getElementById('tokenCodeInput').value.trim();
+            const result = document.getElementById('tokenResult');
+            result.className = 'redeem-result';
+
+            if (!code) {
+                result.className = 'redeem-result error';
+                result.textContent = 'Enter a token code';
+                return;
+            }
+
+            await loadTokens();
+            const tok = state.tokens[code];
+            if (tok == null) {
+                log.warn(`Token "${code}" not found`);
+                result.className = 'redeem-result error';
+                result.textContent = `Token "${code}" not found`;
+                document.getElementById('tokenLoaded').classList.add('hidden');
+                return;
+            }
+
+            state.activeToken = code;
+            document.getElementById('loadedCode').textContent = code;
+            document.getElementById('loadedAmt').textContent = '$' + Number(tok.qr).toLocaleString();
+            document.getElementById('tokenLoaded').classList.remove('hidden');
+            result.className = 'redeem-result';
+            log.ok(`Token "${code}" loaded — $${tok.qr}`);
+            renderSavedTokens();
+        }
+
+        // ── Add to token ───────────────────────────────────────────────────
+        async function addToToken() {
+            const code = state.activeToken;
+            const amount = Number(document.getElementById('tokenOpAmt').value);
+            const result = document.getElementById('tokenResult');
+            result.className = 'redeem-result';
+
+            if (!code || state.tokens[code] == null) {
+                result.className = 'redeem-result error';
+                result.textContent = 'Load a token first';
+                return;
+            }
+            if (!amount || amount <= 0) {
+                result.className = 'redeem-result error';
+                result.textContent = 'Enter a valid amount';
+                return;
+            }
+            if (amount > state.userBalances[state.loggedInUser]) {
+                result.className = 'redeem-result error';
+                result.textContent = 'Insufficient funds';
+                return;
+            }
+
+            const before = state.userBalances[state.loggedInUser];
+            state.userBalances[state.loggedInUser] -= amount;
+            state.tokens[code].qr = Number(state.tokens[code].qr) + amount;
+            const after = state.userBalances[state.loggedInUser];
+
+            log.ok(`Added $${amount} from ${state.loggedInUser} → token ${code}`);
+            logAction(state.loggedInUser, 'TOKEN_ADD', amount, `Added $${amount} to token ${code}`);
+            recordTx('token-add', amount, before, after, code);
+            document.getElementById('loadedAmt').textContent = '$' + Number(state.tokens[code].qr).toLocaleString();
+            updateBalanceDisplay();
+            updateLeaderboard();
+            await saveTokens();
+            await saveBalances();
+            renderSavedTokens();
+
+            result.className = 'redeem-result success';
+            result.textContent =
+                `Added $${amount.toLocaleString()} to token. Token now: $${Number(state.tokens[code].qr).toLocaleString()}`;
+            document.getElementById('tokenOpAmt').value = '';
+            if (state.loggedInUser === 'RCB') refreshAdminPanel();
+        }
+
+        // ── Debit from token ──────────────────────────────────────────────
+        async function debitFromToken() {
+            const code = state.activeToken;
+            const amount = Number(document.getElementById('tokenOpAmt').value);
+            const result = document.getElementById('tokenResult');
+            result.className = 'redeem-result';
+
+            if (!code || state.tokens[code] == null) {
+                result.className = 'redeem-result error';
+                result.textContent = 'Load a token first';
+                return;
+            }
+            if (!amount || amount <= 0) {
+                result.className = 'redeem-result error';
+                result.textContent = 'Enter a valid amount';
+                return;
+            }
+            if (amount > Number(state.tokens[code].qr)) {
+                result.className = 'redeem-result error';
+                result.textContent = 'Token has insufficient funds';
+                return;
+            }
+
+            const before = state.userBalances[state.loggedInUser];
+            state.userBalances[state.loggedInUser] += amount;
+            state.tokens[code].qr = Number(state.tokens[code].qr) - amount;
+            const after = state.userBalances[state.loggedInUser];
+
+            log.ok(`Debited $${amount} from token ${code} → ${state.loggedInUser}`);
+            logAction(state.loggedInUser, 'TOKEN_DEBIT', amount, `Debited $${amount} from token ${code}`);
+            recordTx('token-debit', amount, before, after, code);
+            document.getElementById('loadedAmt').textContent = '$' + Number(state.tokens[code].qr).toLocaleString();
+            updateBalanceDisplay();
+            updateLeaderboard();
+            await saveTokens();
+            await saveBalances();
+            renderSavedTokens();
+
+            result.className = 'redeem-result success';
+            result.textContent =
+                `Received $${amount.toLocaleString()} from token. Token now: $${Number(state.tokens[code].qr).toLocaleString()}`;
+            document.getElementById('tokenOpAmt').value = '';
+            if (state.loggedInUser === 'RCB') refreshAdminPanel();
+        }
+
+        // ── Admin Issue Token ─────────────────────────────────────────────
+        async function adminIssueToken() {
+            if (state.loggedInUser !== 'RCB') return;
+            const amount = Number(document.getElementById('adminIssueAmt').value);
+            const result = document.getElementById('adminIssueResult');
+            result.className = 'redeem-result';
+
+            if (!amount || amount <= 0) {
+                result.className = 'redeem-result error';
+                result.textContent = 'Enter a valid starting amount';
+                return;
+            }
+            if (amount > state.userBalances['RCB']) {
+                result.className = 'redeem-result error';
+                result.textContent = 'Insufficient funds';
+                return;
+            }
+
+            const code = Math.floor(1000000000 + Math.random() * 9000000000).toString();
+            state.tokens[code] = { qr: amount };
+            log.info(`Issued token ${code} worth $${amount}`);
+
+            const before = state.userBalances['RCB'];
+            state.userBalances['RCB'] -= amount;
+            const after = state.userBalances['RCB'];
+            logAction('RCB', 'TOKEN_ISSUE', amount, `Issued token ${code} worth $${amount}`);
+            recordTx('issue', amount, before, after, code);
+            updateBalanceDisplay();
+            updateLeaderboard();
+
+            await saveTokens();
+            await saveBalances();
+
+            result.className = 'redeem-result success';
+            result.textContent = `Token ${code} issued with $${amount.toLocaleString()}`;
+            document.getElementById('adminIssueAmt').value = '';
+            refreshAdminPanel();
+            showToast(`Token ${code} issued`);
+        }
+
+        // ── QR Scanner ──────────────────────────────────────────────────
+        let scannerStream = null;
+        let scanInterval = null;
+
+        function startScanner() {
+            const overlay = document.getElementById('scannerOverlay');
+            overlay.style.display = 'flex';
+            const video = document.getElementById('scannerVideo');
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+                    .then(stream => {
+                        scannerStream = stream;
+                        video.srcObject = stream;
+                        video.play();
+                        if (scanInterval) clearInterval(scanInterval);
+                        scanInterval = setInterval(() => {
+                            if (video.readyState === video.HAVE_ENOUGH_DATA) {
+                                const canvas = document.createElement('canvas');
+                                canvas.width = video.videoWidth;
+                                canvas.height = video.videoHeight;
+                                const ctx = canvas.getContext('2d');
+                                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                                const code = jsQR(imageData.data, imageData.width, imageData.height);
+                                if (code && code.data) {
+                                    document.getElementById('scanStatus').textContent = 'Code found: ' + code.data;
+                                    stopScanner();
+                                    document.getElementById('tokenCodeInput').value = code.data;
+                                    loadToken();
+                                    showToast('Token loaded from QR');
+                                }
+                            }
+                        }, 500);
+                    })
+                    .catch(err => {
+                        alert('Camera access denied: ' + err.message);
+                        stopScanner();
+                    });
+            } else {
+                alert('Camera not supported');
+                stopScanner();
+            }
+        }
+
+        function stopScanner() {
+            if (scanInterval) {
+                clearInterval(scanInterval);
+                scanInterval = null;
+            }
+            if (scannerStream) {
+                scannerStream.getTracks().forEach(track => track.stop());
+                scannerStream = null;
+            }
+            document.getElementById('scannerOverlay').style.display = 'none';
+            document.getElementById('scannerVideo').srcObject = null;
+        }
+
+        // ── Auth ──────────────────────────────────────────────────────────
+        function showSignup() {
+            document.getElementById('loginScreen').classList.add('hidden');
+            document.getElementById('signupScreen').classList.remove('hidden');
+            document.getElementById('signupError').textContent = '';
+        }
+
+        function showLogin() {
+            document.getElementById('signupScreen').classList.add('hidden');
+            document.getElementById('loginScreen').classList.remove('hidden');
+            document.getElementById('loginError').textContent = '';
+        }
+
+        async function signup() {
+            const username = document.getElementById('signupUsername').value.trim();
+            const password = document.getElementById('signupPassword').value;
+            const btn = document.getElementById('signupBtn');
+            const errorDiv = document.getElementById('signupError');
+            errorDiv.textContent = '';
+
+            if (!username || !password) {
+                errorDiv.textContent = 'Enter username and password';
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading-spinner"></span>';
+
+            try {
+                const credentials = await fetchCredentials();
+                if (!credentials) {
+                    errorDiv.textContent = 'Server unavailable — try again later';
+                    return;
+                }
+                if (credentials[username]) {
+                    errorDiv.textContent = 'Username already taken';
+                    return;
+                }
+
+                const passwords = {},
+                    dataCache = {};
+                for (const [user, data] of Object.entries(credentials)) {
+                    passwords[user] = data.password;
+                    dataCache[user] = data.balance;
+                }
+                passwords[username] = password;
+                dataCache[username] = 0;
+
+                await ikeleneSet('credentials', JSON.stringify(passwords));
+                await ikeleneSet('data', JSON.stringify(dataCache));
+
+                log.ok(`Account created for "${username}"`);
+                logAction(username, 'SIGNUP', 0, `User ${username} created an account`);
+                showLogin();
+                showToast('Account created — you can now log in');
+                document.getElementById('loginUsername').value = username;
+                document.getElementById('signupUsername').value = '';
+                document.getElementById('signupPassword').value = '';
+            } catch (err) {
+                errorDiv.textContent = 'Error: ' + err.message;
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Create Account';
+            }
+        }
+
+        async function login() {
+            const username = document.getElementById('loginUsername').value.trim();
+            const password = document.getElementById('loginPassword').value;
+            const loginBtn = document.getElementById('loginBtnMain');
+            const errorDiv = document.getElementById('loginError');
+
+            errorDiv.textContent = '';
+
+            if (!username || !password) {
+                errorDiv.textContent = 'Enter username and password';
+                return;
+            }
+
+            loginBtn.disabled = true;
+            loginBtn.innerHTML = '<span class="loading-spinner"></span>';
+
+            try {
+                const credentials = await fetchCredentials();
+
+                if (!credentials || !credentials[username]) {
+                    errorDiv.textContent = 'User not found';
+                    loginBtn.disabled = false;
+                    loginBtn.textContent = 'Sign In';
+                    return;
+                }
+
+                if (credentials[username].password !== password) {
+                    errorDiv.textContent = 'Wrong password';
+                    loginBtn.disabled = false;
+                    loginBtn.textContent = 'Sign In';
+                    return;
+                }
+
+                state.loggedInUser = username;
+                state.transactions = [];
+                state.userBalances = Object.entries(credentials).reduce((acc, [user, data]) => {
+                    acc[user] = data.balance;
+                    state.userPasswords[user] = data.password;
+                    return acc;
+                }, {});
+                log.info('Loaded balances:', JSON.stringify(state.userBalances));
+
+                // Load tokens and action log
+                await loadTokens();
+                await loadActionLog();
+
+                document.getElementById('loginScreen').classList.add('hidden');
+                document.getElementById('appScreen').classList.remove('hidden');
+                document.getElementById('userBadge').textContent = username;
+                document.getElementById('loginUsername').value = '';
+                document.getElementById('loginPassword').value = '';
+
+                // Show admin tab if RCB
+                if (username === 'RCB') {
+                    document.querySelectorAll('.admin-tab').forEach(el => el.classList.remove('hidden'));
+                    renderAdminPanel();
+                } else {
+                    document.querySelectorAll('.admin-tab').forEach(el => el.classList.add('hidden'));
+                }
+
+                renderSavedTokens();
+                updateBalanceDisplay();
+                updateLeaderboard();
+                logAction(username, 'LOGIN', 0, `User ${username} logged in`);
+                showToast(`Welcome, ${username}!`);
+            } catch (err) {
+                errorDiv.textContent = 'Login error: ' + err.message;
+            } finally {
+                loginBtn.disabled = false;
+                loginBtn.textContent = 'Sign In';
+            }
+        }
+
+        function logout() {
+            log.info(`User "${state.loggedInUser}" signed out`);
+            if (state.loggedInUser) {
+                logAction(state.loggedInUser, 'LOGOUT', 0, `User ${state.loggedInUser} signed out`);
+            }
+            stopScanner();
+            state.loggedInUser = null;
+            state.transactions = [];
+            state.tokens = {};
+            state.activeToken = null;
+            state.actionLog = [];
+            document.getElementById('tokenLoaded').classList.add('hidden');
+            document.getElementById('tokenResult').className = 'redeem-result';
+            document.getElementById('transferResult').className = 'redeem-result';
+            document.getElementById('appScreen').classList.add('hidden');
+            document.getElementById('signupScreen').classList.add('hidden');
+            document.getElementById('loginScreen').classList.remove('hidden');
+            document.getElementById('loginError').textContent = '';
+            document.querySelectorAll('.admin-tab').forEach(el => el.classList.add('hidden'));
+            renderSavedTokens();
+            showToast('Signed out');
+        }
+
+        // ── Admin Panel ──────────────────────────────────────────────────
+        function renderAdminPanel() {
+            if (state.loggedInUser !== 'RCB') return;
+
+            // Users Table
+            const userTableBody = document.querySelector('#adminUserTable tbody');
+            const sortedUsers = Object.entries(state.userBalances).sort((a, b) => b[1] - a[1]);
+            userTableBody.innerHTML = sortedUsers.map(([user, balance]) => `
+                        <tr>
+                            <td class="user-cell">${user}</td>
+                            <td>$${Number(balance).toLocaleString()}</td>
+                        </tr>
+                    `).join('');
+
+            // Tokens Table
+            const tokenTableBody = document.querySelector('#adminTokenTable tbody');
+            const sortedTokens = Object.entries(state.tokens).sort((a, b) => a[0].localeCompare(b[0]));
+            tokenTableBody.innerHTML = sortedTokens.map(([code, data]) => `
+                        <tr>
+                            <td class="mono">${code}</td>
+                            <td>$${Number(data.qr).toLocaleString()}</td>
+                        </tr>
+                    `).join('');
+
+            // Logs Table
+            const logTableBody = document.querySelector('#adminLogTable tbody');
+            if (state.actionLog.length === 0) {
+                logTableBody.innerHTML =
+                    `<tr><td colspan="5" style="text-align:center;color:#999;padding:20px;">No actions logged yet</td></tr>`;
+            } else {
+                logTableBody.innerHTML = state.actionLog.map(entry => {
+                    const time = new Date(entry.timestamp).toLocaleString();
+                    const amount = entry.amount ? `$${Number(entry.amount).toLocaleString()}` : '—';
+                    const isCredit = entry.action === 'TOKEN_DEBIT' || entry.action === 'TRANSFER_IN' || entry.action ===
+                        'SIGNUP';
+                    const isDebit = entry.action === 'TOKEN_ADD' || entry.action === 'TRANSFER_OUT' || entry.action ===
+                        'TOKEN_ISSUE';
+                    const amountClass = isCredit ? 'credit' : (isDebit ? 'debit' : '');
+                    return `<tr>
+                                <td class="log-time">${time}</td>
+                                <td class="user-cell">${entry.user}</td>
+                                <td>${entry.action.replace('_', ' ')}</td>
+                                <td class="amount-cell ${amountClass}">${amount}</td>
+                                <td>${entry.details || ''}</td>
+                            </tr>`;
+                }).join('');
+            }
+        }
+
+        function refreshAdminPanel() {
+            if (state.loggedInUser !== 'RCB') return;
+            renderAdminPanel();
+            showToast('Admin data refreshed');
+        }
+
+        async function clearLogs() {
+            if (state.loggedInUser !== 'RCB') return;
+            if (!confirm('Are you sure you want to clear all action logs?')) return;
+            state.actionLog = [];
+            await saveActionLog();
+            renderAdminPanel();
+            showToast('Logs cleared');
+        }
+
+        // ── UI helpers ────────────────────────────────────────────────────
+        function updateBalanceDisplay() {
+            if (!state.loggedInUser) return;
+            const balance = state.userBalances[state.loggedInUser];
+            document.getElementById('balanceDisplay').textContent = '$' + (balance.toLocaleString ? balance.toLocaleString() :
+                balance);
+        }
+
+        function updateLeaderboard() {
+            const sorted = Object.entries(state.userBalances)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 5);
+
+            document.getElementById('leaderboard').innerHTML = sorted
+                .map((item, i) => `
+                            <div class="leaderboard-item">
+                                <div class="rank">${i + 1}.</div>
+                                <div class="user-name">${item[0]}</div>
+                                <div class="user-balance">$${(item[1].toLocaleString ? item[1].toLocaleString() : item[1])}</div>
+                            </div>
+                        `)
+                .join('');
+        }
+
+        function switchTab(id) {
+            document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            const tabBar = document.getElementById('mainTabBar');
+            const tabs = tabBar.querySelectorAll('.tab');
+            const idx = ['tab-txn', 'tab-history', 'tab-tokens', 'tab-admin'].indexOf(id);
+            if (tabs[idx]) tabs[idx].classList.add('active');
+            if (id === 'tab-admin') renderAdminPanel();
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 2500);
+        }
+
+        function refreshData() {
+            updateBalanceDisplay();
+            updateLeaderboard();
+            renderSavedTokens();
+            if (state.loggedInUser === 'RCB') refreshAdminPanel();
+            showToast('Data refreshed');
+        }
+
+        // ── Transaction history ───────────────────────────────────────────
+        function recordTx(type, amount, before, after, note = '') {
+            state.transactions.unshift({ type, amount, before, after, user: state.loggedInUser, ts: Date.now(), note });
+            renderHistory();
+        }
+
+        function renderHistory() {
+            const list = document.getElementById('txList');
+            if (!state.transactions.length) {
+                list.innerHTML =
+                    '<div style="color:#999;font-size:13px;text-align:center;padding:30px 0;">No transactions yet</div>';
+                return;
+            }
+            list.innerHTML = state.transactions.map(tx => {
+                const isOut = tx.type === 'transfer-out' || tx.type === 'token-add';
+                const isIn = tx.type === 'transfer-in' || tx.type === 'token-debit' || tx.type === 'issue';
+                const sign = isOut ? '-' : '+';
+                const cls = isOut ? 'debit' : 'credit';
+                const labels = {
+                    'transfer-out': `Sent to ${tx.note}`,
+                    'transfer-in': `Received from ${tx.note}`,
+                    'token-add': `Added to token ${tx.note}`,
+                    'token-debit': `Debited from token ${tx.note}`,
+                    'issue': `Issued token ${tx.note}`,
+                };
+                const label = labels[tx.type] || tx.type;
+                const time = new Date(tx.ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                const date = new Date(tx.ts).toLocaleDateString([], { month: 'short', day: 'numeric' });
+                return `<div class="tx-item">
+                            <div class="tx-left">
+                                <span class="tx-type">${label}</span>
+                                <span class="tx-time">${date} ${time} · $${tx.before.toLocaleString()} → $${tx.after.toLocaleString()}</span>
+                            </div>
+                            <span class="tx-amount ${cls}">${sign}$${tx.amount.toLocaleString()}</span>
+                        </div>`;
+            }).join('');
+        }
+
+        // ── Transfer ──────────────────────────────────────────────────────
+        async function transferMoney() {
+            const receiver = document.getElementById('receiverInput').value.trim();
+            const amount = Number(document.getElementById('amountInput').value);
+            const result = document.getElementById('transferResult');
+            result.className = 'redeem-result';
+
+            const me = state.loggedInUser;
+
+            if (!receiver || !amount) {
+                result.className = 'redeem-result error';
+                result.textContent = 'Enter receiver name and amount';
+                return;
+            }
+            if (amount < 0 || !Number.isFinite(amount)) {
+                result.className = 'redeem-result error';
+                result.textContent = 'Error: cannot send negative amount or non-numbers';
+                return;
+            }
+            if (!(receiver in state.userBalances)) {
+                result.className = 'redeem-result error';
+                result.textContent = 'Error: user does not exist';
+                return;
+            }
+            if (receiver === me) {
+                result.className = 'redeem-result error';
+                result.textContent = 'Cannot transfer to yourself';
+                return;
+            }
+            if (amount > state.userBalances[me]) {
+                result.className = 'redeem-result error';
+                result.textContent = 'Insufficient funds';
+                return;
+            }
+
+            const senderBefore = state.userBalances[me];
+            const receiverBefore = state.userBalances[receiver];
+            state.userBalances[me] -= amount;
+            state.userBalances[receiver] += amount;
+            const senderAfter = state.userBalances[me];
+
+            log.ok(`Transfer $${amount} from ${me} → ${receiver}`);
+            logAction(me, 'TRANSFER_OUT', amount, `Transferred $${amount} to ${receiver}`);
+            recordTx('transfer-out', amount, senderBefore, senderAfter, receiver);
+            updateBalanceDisplay();
+            updateLeaderboard();
+            await saveBalances();
+
+            result.className = 'redeem-result success';
+            result.textContent = `Sent $${amount.toLocaleString()} to ${receiver}`;
+            document.getElementById('receiverInput').value = '';
+            document.getElementById('amountInput').value = '';
+            if (state.loggedInUser === 'RCB') refreshAdminPanel();
+        }
+
+        // ── Enter key login ──────────────────────────────────────────────
+        document.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !document.getElementById('loginScreen').classList.contains('hidden')) {
+                login();
+            }
+        });
+    </script>
+</body>
+</html>
